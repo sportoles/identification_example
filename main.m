@@ -123,6 +123,11 @@ H_vel_analytic_den = [mass, -damping, spring];
 H_vel_analytic = tf(H_vel_analytic_num, H_vel_analytic_den);
 
 %%
+% Fiting of the FRF
+
+[Bls_fit,Als_fit,y_fit] = lsfdi(force_iden_s,pos_iden_s,freq_transform,2,1,1,'c',sample_frequency);
+
+%%
 % Plots
 
 % Time domain plot
