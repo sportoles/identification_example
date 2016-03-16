@@ -21,7 +21,7 @@ t_max = 10; % [s]
 pos_initial = 0; % [m]
 vel_initial = 0; % [m/s]
 
-num_samples = 1001;
+num_samples = 1024;
 
 force_constant = 0; %[N]
 freq_exciting = 8; % [Hz]
@@ -80,7 +80,7 @@ end
 
 %%
 % Generate identification excitation
-[x_iden,X_iden,freq_iden,Xt_iden,freqt_iden] = musint2(sample_frequency,0,40,num_samples,'r','c','f',1,1);
+[x_iden,X_iden,freq_iden] = musin_type(sample_frequency,0,40,num_samples,'r','c','f',1,1);
 
 %%
 % Excite system with identification signal
@@ -125,7 +125,7 @@ H_vel_analytic = tf(H_vel_analytic_num, H_vel_analytic_den);
 %%
 % Fiting of the FRF
 
-[Bls_fit,Als_fit,y_fit] = lsfdi(force_iden_s,pos_iden_s,freq_transform,2,1,1,'c',sample_frequency);
+%[Bls_fit,Als_fit,y_fit] = nllsfdi(force_iden_s,pos_iden_s,freq_transform,2,1,1,'c',sample_frequency);
 
 %%
 % Plots
@@ -197,21 +197,24 @@ ylabel('Acceleration [m/s^2]');
 
 % Frequency domain plot
 figure(6);
+range = 1:NFFT/2+1;
+range = 1:floor(length(freq_transform)*3.9/5);
 subplot(3,1,1);
-plot(freq_transform,2*abs(pos_iden_s(1:NFFT/2+1)));
+plot(freq_transform(range),2*abs(pos_iden_s(range)));
 title('Single-Sided Amplitude Spectrum of pos_{identification}(t)');
 xlabel('Frequency (Hz)');
 ylabel('|pos_{identification}(s)|');
 subplot(3,1,2);
 hold on
-plot(freq_transform,2*abs(force_iden_s(1:NFFT/2+1)));
+plot(freq_transform(range),2*abs(force_iden_s(range)));
 plot(freq_iden,abs(X_iden),'r');
-plot(freqt_iden,abs(Xt_iden),'g');
+axis([0 40 0 1.1]);
 title('Single-Sided Amplitude Spectrum of force_{identification}(t)');
 xlabel('Frequency (Hz)');
 ylabel('|force_{identification}(s)|');
 subplot(3,1,3);
-plot(freq_transform,2*abs(transf_function(1:NFFT/2+1)));
+plot(freq_transform(range),2*abs(transf_function(range)));
+axis([0 40 0 1e-4]);
 title('Transfer function');
 xlabel('Frequency (Hz)');
 ylabel('|H(s)|');
