@@ -11,7 +11,7 @@ function [ dxdt ] = system_mkd( t, x, M, K, B, f_0, control_law )
     %f_claw = 0.0;
 
     dxdt_1 = x(2);
-    dxdt_2 = -K/M*x(1) - B/M*x(2) + f_0 + f_claw;
+    dxdt_2 = -K/M*x(1) - (B/M)*x(2) + f_0/M + f_claw/M;
     dxdt = [dxdt_1; dxdt_2];
 
 end

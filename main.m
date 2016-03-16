@@ -18,13 +18,13 @@ spring = 50; % [N/m]
 damping = 0.1; % [Ns/m]
 t_max = 10; % [s]
 
-pos_initial = 0; % [m]
+pos_initial = 10; % [m]
 vel_initial = 0; % [m/s]
 
 num_samples = 1024;
 
 force_constant = 0; %[N]
-freq_exciting = 8; % [Hz]
+freq_exciting = 6.5; % [Hz]
 amp_exciting = 100; % [N]
 
 %%
@@ -38,6 +38,16 @@ sample_frequency = 1/sample_period;
 % Resonance frequency
 
 freq_natural_analytic = sqrt(spring/mass)/(2*pi);
+
+%%
+% Transfer function model
+
+H_pos_analytic_num = [1];
+H_pos_analytic_den = [mass, damping, spring];
+H_pos_analytic = tf(H_pos_analytic_num, H_pos_analytic_den);
+H_vel_analytic_num = [1 0];
+H_vel_analytic_den = [mass, -damping, spring];
+H_vel_analytic = tf(H_vel_analytic_num, H_vel_analytic_den);
 
 %%
 % Integration of the sytem (non-exited)
@@ -102,6 +112,9 @@ for n_time = 1:length(t_sampled)
     accel_iden(n_time) = state_current(2);
 end
 
+%[y_sim,t_sim] = lsim(H_pos_analytic,force_iden,t_sampled,10);
+%pos_iden = y_sim';
+
 %%
 % Fourier transforms
 NFFT = 2^nextpow2(num_samples);
@@ -111,21 +124,13 @@ pos_iden_s = fft(pos_iden,NFFT)/num_samples;
 force_iden_s = fft(force_iden,NFFT)/num_samples;
 transf_function = pos_iden_s ./ force_iden_s;
 freq_transform = sample_frequency/2*linspace(0,1,NFFT/2+1);
-
-%%
-% Transfer function model
-
-H_pos_analytic_num = [1];
-H_pos_analytic_den = [mass, -damping, spring];
-H_pos_analytic = tf(H_pos_analytic_num, H_pos_analytic_den);
-H_vel_analytic_num = [1 0];
-H_vel_analytic_den = [mass, -damping, spring];
-H_vel_analytic = tf(H_vel_analytic_num, H_vel_analytic_den);
+range = 1:NFFT/2+1;
+range = 1:floor(length(freq_transform)*3.9/5);
 
 %%
 % Fiting of the FRF
 
-%[Bls_fit,Als_fit,y_fit] = nllsfdi(force_iden_s,pos_iden_s,freq_transform,2,1,1,'c',sample_frequency);
+[Bn,An,Bls,Als,Bls2,Als2] = nllsfdi(transf_function(range)',freq_transform(range)',1,2,1,1,10,1e-6,0,'c',sample_frequency);
 
 %%
 % Plots
@@ -197,8 +202,6 @@ ylabel('Acceleration [m/s^2]');
 
 % Frequency domain plot
 figure(6);
-range = 1:NFFT/2+1;
-range = 1:floor(length(freq_transform)*3.9/5);
 subplot(3,1,1);
 plot(freq_transform(range),2*abs(pos_iden_s(range)));
 title('Single-Sided Amplitude Spectrum of pos_{identification}(t)');
@@ -208,13 +211,13 @@ subplot(3,1,2);
 hold on
 plot(freq_transform(range),2*abs(force_iden_s(range)));
 plot(freq_iden,abs(X_iden),'r');
-axis([0 40 0 1.1]);
+%axis([0 40 0 1.1]);
 title('Single-Sided Amplitude Spectrum of force_{identification}(t)');
 xlabel('Frequency (Hz)');
 ylabel('|force_{identification}(s)|');
 subplot(3,1,3);
 plot(freq_transform(range),2*abs(transf_function(range)));
-axis([0 40 0 1e-4]);
+%axis([0 40 0 1e-4]);
 title('Transfer function');
 xlabel('Frequency (Hz)');
 ylabel('|H(s)|');
@@ -222,8 +225,23 @@ ylabel('|H(s)|');
 %%
 % Bode plot of the system, analytical model
 figure(7);
-bode(H_pos_analytic);
+hold on
+[mag_a,phase_a,wout_a] = bode(H_pos_analytic);
+[mag_f,phase_f,wout_f] = bode(tf(Bn,An));
+subplot(2,1,1);
+plot(wout_a',db(reshape(mag_a,1,length(mag_a))),'b', ...
+    wout_f',db(reshape(mag_f,1,length(mag_f))),'g', ...
+    freq_transform(range),db(transf_function(range)),'r');
+set(gca,'xscale','log');
+legend('Analytic model','Fit with nllsfdi','Measured','Location','SouthWest');
+subplot(2,1,2);
+plot(wout_a,reshape(phase_a,1,length(phase_a)),'b', ...
+    wout_f,reshape(phase_f,1,length(phase_f)),'g', ...
+    freq_transform(range),(180/pi)*angle(transf_function(range)),'r');
+%legend('Analytic model','Fit with nllsfdi');
+set(gca,'xscale','log');
 title('Bode analysis of Position/Force analytic plant of MKB system');
+title('Bode analysis of fitted solution');
 figure(8);
 bode(H_vel_analytic);
 title('Bode analysis of Velocity/Force analytic plant of MKB system');
@@ -234,7 +252,7 @@ close(1);
 close(2);
 close(3);
 close(4);
-% close(5);
-% close(6);
+close(5);
+close(6);
 % close(7);
-% close(8);
+close(8);

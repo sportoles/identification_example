@@ -14,6 +14,19 @@ Finally, the system is excited with an input signal generated with an
 identification toolbox. It contains all the frequencies in a span.
 The FRF of the system is calculated and displayed.
 
+# Model
+
+The model is a mechanical Mass-Spring-Damper 2nd order system.
+In time domain:
+
+$$f - K*x -B*diff(x) = M*diff(diff(x))$$
+
+$$f = M*diff(diff(x)) + K*x + B*diff(x)$$
+
+In frequency domain:
+
+$$F = 1/(M*s^2+B*s+K) * X$$
+
 # Toolbox used
 
 The toolbox created at [MECO][meco-group] group of KU Leuven.
