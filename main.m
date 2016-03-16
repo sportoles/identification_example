@@ -115,9 +115,12 @@ freq_transform = sample_frequency/2*linspace(0,1,NFFT/2+1);
 %%
 % Transfer function model
 
-H_analytic_num = [1];
-H_analytic_den = [mass, -damping, spring];
-H_analytic = tf(H_analytic_num, H_analytic_den);
+H_pos_analytic_num = [1];
+H_pos_analytic_den = [mass, -damping, spring];
+H_pos_analytic = tf(H_pos_analytic_num, H_pos_analytic_den);
+H_vel_analytic_num = [1 0];
+H_vel_analytic_den = [mass, -damping, spring];
+H_vel_analytic = tf(H_vel_analytic_num, H_vel_analytic_den);
 
 %%
 % Plots
@@ -211,15 +214,19 @@ ylabel('|H(s)|');
 %%
 % Bode plot of the system, analytical model
 figure(7);
-bode(H_analytic);
-title('Bode analysis of the analytic plant of MKB system');
+bode(H_pos_analytic);
+title('Bode analysis of Position/Force analytic plant of MKB system');
+figure(8);
+bode(H_vel_analytic);
+title('Bode analysis of Velocity/Force analytic plant of MKB system');
 
 %%
 % Close unwatched figures
-% close(1);
-% close(2);
-% close(3);
-% close(4);
-close(5);
-close(6);
-close(7);
+close(1);
+close(2);
+close(3);
+close(4);
+% close(5);
+% close(6);
+% close(7);
+% close(8);
