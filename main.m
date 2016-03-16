@@ -46,7 +46,7 @@ H_pos_analytic_num = [1];
 H_pos_analytic_den = [mass, damping, spring];
 H_pos_analytic = tf(H_pos_analytic_num, H_pos_analytic_den);
 H_vel_analytic_num = [1 0];
-H_vel_analytic_den = [mass, -damping, spring];
+H_vel_analytic_den = [mass, damping, spring];
 H_vel_analytic = tf(H_vel_analytic_num, H_vel_analytic_den);
 
 %%
@@ -103,7 +103,7 @@ vel_iden(1) = vel_initial;
 accel_iden = zeros(size(t_sampled));
 
 for n_time = (1:length(t_sampled)-1)
-    [t_sim,x_sim] = ode45 (@(t,x) system_mkd(t,x,mass,spring,damping,force_iden(n_time),@(t,x) 0), [t_sampled(n_time), t_sampled(n_time+1)], [pos_int(n_time); vel_int(n_time)]);
+    [t_sim,x_sim] = ode23tb (@(t,x) system_mkd(t,x,mass,spring,damping,force_iden(n_time),@(t,x) 0), [t_sampled(n_time), t_sampled(n_time+1)], [pos_int(n_time); vel_int(n_time)]);
     pos_iden(n_time+1) = x_sim(end,1);
     vel_iden(n_time+1) = x_sim(end,2);
 end
@@ -112,8 +112,8 @@ for n_time = 1:length(t_sampled)
     accel_iden(n_time) = state_current(2);
 end
 
-%[y_sim,t_sim] = lsim(H_pos_analytic,force_iden,t_sampled,10);
-%pos_iden = y_sim';
+[y_sim,t_sim] = lsim(H_pos_analytic,force_iden,t_sampled,10);
+pos_iden = y_sim';
 
 %%
 % Fourier transforms
@@ -130,7 +130,7 @@ range = 1:floor(length(freq_transform)*3.9/5);
 %%
 % Fiting of the FRF
 
-[Bn,An,Bls,Als,Bls2,Als2] = nllsfdi(transf_function(range)',freq_transform(range)',1,2,1,1,10,1e-6,0,'c',sample_frequency);
+[Bn,An,Bls,Als,Bls2,Als2] = nllsfdi(transf_function(range)',freq_transform(range)',ones(size(freq_transform(range)')),2,0,0,100,1e-6,0,'c',sample_frequency);
 
 %%
 % Plots
@@ -227,17 +227,17 @@ ylabel('|H(s)|');
 figure(7);
 hold on
 [mag_a,phase_a,wout_a] = bode(H_pos_analytic);
-[mag_f,phase_f,wout_f] = bode(tf(Bn,An));
+[mag_f,phase_f,wout_f] = bode(tf(Bn,An),2*pi*freq_transform(range));
 subplot(2,1,1);
 plot(wout_a',db(reshape(mag_a,1,length(mag_a))),'b', ...
     wout_f',db(reshape(mag_f,1,length(mag_f))),'g', ...
-    freq_transform(range),db(transf_function(range)),'r');
+    2*pi*freq_transform(range),db(transf_function(range)),'r');
 set(gca,'xscale','log');
 legend('Analytic model','Fit with nllsfdi','Measured','Location','SouthWest');
 subplot(2,1,2);
 plot(wout_a,reshape(phase_a,1,length(phase_a)),'b', ...
-    wout_f,reshape(phase_f,1,length(phase_f)),'g', ...
-    freq_transform(range),(180/pi)*angle(transf_function(range)),'r');
+    wout_f,reshape(+1*phase_f,1,length(phase_f)),'g', ...
+    2*pi*freq_transform(range),(180/pi)*unwrap(angle(transf_function(range))),'r');
 %legend('Analytic model','Fit with nllsfdi');
 set(gca,'xscale','log');
 title('Bode analysis of Position/Force analytic plant of MKB system');
